@@ -11,6 +11,10 @@ dependencies {
 
     //Coroutines
     implementation dependencies.kotlinxCoroutines
+
+    // Test Dependencies
+    testImplementation testDependecies.junit
+    testImplementation testDependecies.mockitoCore
 }
 
 sourceCompatibility = "8"

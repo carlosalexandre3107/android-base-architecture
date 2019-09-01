@@ -64,7 +64,10 @@ dependencies {
     //CircleImageView
     implementation dependencies.circleImageView
 
-    testImplementation testDependencies.junit
+    // Test Dependencies
+    testImplementation testDependecies.junit
+    testImplementation testDependecies.androidXTestCore
+    testImplementation testDependecies.mockitoCore
 
     androidTestImplementation testDependencies.runner
     androidTestImplementation testDependencies.espresso
