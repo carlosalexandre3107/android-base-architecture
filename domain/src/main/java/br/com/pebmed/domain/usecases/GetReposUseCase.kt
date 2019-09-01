@@ -1,5 +1,6 @@
 package br.com.pebmed.domain.usecases
 
+import br.com.pebmed.domain.base.BaseErrorData
 import br.com.pebmed.domain.extensions.getCurrentDateTime
 import br.com.pebmed.domain.extensions.toCacheFormat
 import br.com.pebmed.domain.base.ResultWrapper
@@ -12,34 +13,55 @@ class GetReposUseCase(
 
     override suspend fun run(params: Params): ResultWrapper<List<Repo>?, String> {
         return if (params.forceSync) {
-            getAllFromRemote()
+            this.loadRemoteData()
         } else {
-            when (val localResult = repoRepository.getAllLocalRepos()) {
-                is ResultWrapper.Success -> {
-                    ResultWrapper.Success(localResult.data)
-                }
+            this.loadLocalData()
+        }
+    }
 
-                is ResultWrapper.Error -> {
-                    ResultWrapper.Error(localResult.data?.errorMessage)
-                }
+    suspend fun loadRemoteData(): ResultWrapper<List<Repo>?, String> {
+        val resultWrapper = repoRepository.getAllRemoteRepos(
+                page = 1,
+                language = "kotlin"
+            )
+
+        return when (resultWrapper) {
+            is ResultWrapper.Success -> {
+                this.handleRemoteSuccess(resultWrapper)
+            }
+
+            is ResultWrapper.Error -> {
+                this.handleRemoteError(resultWrapper)
             }
         }
     }
 
-    private suspend fun getAllFromRemote(): ResultWrapper<List<Repo>?, String> {
-        return when (val remoteResult = repoRepository.getAllRemoteRepos(1, "kotlin")) {
+    suspend fun loadLocalData(): ResultWrapper<List<Repo>?, String> {
+        return when (val resultWrapper = repoRepository.getAllLocalRepos()) {
             is ResultWrapper.Success -> {
-                if (remoteResult.data.isNotEmpty()) {
-                    repoRepository.saveLastSyncDate(getCurrentDateTime().toCacheFormat())
-                }
-
-                ResultWrapper.Success(remoteResult.data)
+                ResultWrapper.Success(resultWrapper.data)
             }
 
             is ResultWrapper.Error -> {
-                ResultWrapper.Error(remoteResult.data?.errorMessage)
+                ResultWrapper.Error(resultWrapper.data?.errorMessage)
             }
         }
+    }
+
+    private fun handleRemoteError(
+        errorResultWrapper: ResultWrapper.Error<List<Repo>, BaseErrorData<Void>>
+    ): ResultWrapper.Error<List<Repo>?, String> {
+        return ResultWrapper.Error(errorResultWrapper.data?.errorMessage)
+    }
+
+    private fun handleRemoteSuccess(
+        successResultWrapper: ResultWrapper.Success<List<Repo>, BaseErrorData<Void>>
+    ): ResultWrapper.Success<List<Repo>?, String> {
+        if (successResultWrapper.data.isNotEmpty()) {
+            repoRepository.saveLastSyncDate(getCurrentDateTime().toCacheFormat())
+        }
+
+        return ResultWrapper.Success(successResultWrapper.data)
     }
 
     data class Params(val forceSync: Boolean)
