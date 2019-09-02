@@ -4,6 +4,8 @@ import br.com.pebmed.domain.base.ResultWrapper
 import br.com.pebmed.domain.base.BaseErrorData
 import br.com.pebmed.domain.entities.Repo
 import br.com.pebmed.domain.entities.Owner
+import br.com.pebmed.domain.extensions.getCurrentDateTime
+import br.com.pebmed.domain.extensions.toCacheFormat
 import br.com.pebmed.domain.repository.RepoRepository
 import kotlinx.coroutines.runBlocking
 import org.junit.After
@@ -26,6 +28,9 @@ class GetReposUseCaseTest {
     @Mock
     lateinit var successResultWrapper: ResultWrapper.Success<List<Repo>, BaseErrorData<Void>>
 
+    @Mock
+    lateinit var successResultWrapperEmpty: ResultWrapper.Success<List<Repo>, BaseErrorData<Void>>
+
     @Before
     fun setUp() {
         MockitoAnnotations.initMocks(this)
@@ -33,6 +38,7 @@ class GetReposUseCaseTest {
 
         this.errorResultWrapper = ResultWrapper.Error()
         this.successResultWrapper = this.loadSuccessResultWrapper()
+        this.successResultWrapperEmpty = this.loadSuccessResultWrapperEmpty()
     }
 
     @After
@@ -92,6 +98,35 @@ class GetReposUseCaseTest {
         }
     }
 
+    @Test
+    fun `SHOULD call handleRemoteSuccess() once WHEN resultWrapper is success`() {
+        `when`(
+            runBlocking {
+                repoRepository.getAllRemoteRepos(anyInt(), anyString())
+            }
+        ).thenReturn(
+            successResultWrapper
+        )
+
+        runBlocking {
+            val spiedUseCaseGetRepos = spy(getReposUseCase)
+            getReposUseCase.loadRemoteData()
+            verify(spiedUseCaseGetRepos, times(1)).handleRemoteSuccess(successResultWrapper)
+        }
+    }
+
+    @Test
+    fun `SHOULD call saveLastSyncDate() once WHEN data list is not empty`() {
+        getReposUseCase.handleRemoteSuccess(successResultWrapper)
+        verify(repoRepository, times(1)).saveLastSyncDate(getCurrentDateTime().toCacheFormat())
+    }
+
+    @Test
+    fun `SHOULD NOT call saveLastSyncDate() WHEN data list is empty`() {
+        getReposUseCase.handleRemoteSuccess(successResultWrapperEmpty)
+        verify(repoRepository, times(0)).saveLastSyncDate(getCurrentDateTime().toCacheFormat())
+    }
+
     private fun loadSuccessResultWrapper(): ResultWrapper.Success<List<Repo>, BaseErrorData<Void>> {
         val owner = Owner(
             id = 10
@@ -106,5 +141,9 @@ class GetReposUseCaseTest {
         arrayOfRepos.add(repo)
 
         return ResultWrapper.Success(data = arrayOfRepos)
+    }
+
+    private fun loadSuccessResultWrapperEmpty(): ResultWrapper.Success<List<Repo>, BaseErrorData<Void>> {
+        return ResultWrapper.Success(data = ArrayList<Repo>())
     }
 }

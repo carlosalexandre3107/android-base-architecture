@@ -54,7 +54,7 @@ class GetReposUseCase(
         return ResultWrapper.Error(errorResultWrapper.data?.errorMessage)
     }
 
-    private fun handleRemoteSuccess(
+    fun handleRemoteSuccess(
         successResultWrapper: ResultWrapper.Success<List<Repo>, BaseErrorData<Void>>
     ): ResultWrapper.Success<List<Repo>?, String> {
         if (successResultWrapper.data.isNotEmpty()) {
