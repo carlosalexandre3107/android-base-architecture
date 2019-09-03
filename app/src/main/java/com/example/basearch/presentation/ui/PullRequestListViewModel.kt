@@ -10,7 +10,7 @@ import br.com.pebmed.domain.usecases.ListPullRequestsUseCase
 
 class PullRequestListViewModel(
     private val listPullRequestsUseCase: ListPullRequestsUseCase
-) : ViewModel() {
+) : BaseViewModel() {
 
     private val _pullRequestListState = MutableLiveData<ViewStateResource<List<PullRequest>>>()
 
@@ -27,18 +27,7 @@ class PullRequestListViewModel(
 
         listPullRequestsUseCase.invoke(viewModelScope, params) {
             run {
-                val viewStateResource = when (it) {
-                    is ResultWrapper.Success -> {
-                        if (it.data != null && it.data!!.isNotEmpty())
-                            ViewStateResource.Success(it.data!!)
-                        else
-                            ViewStateResource.Empty<List<PullRequest>>()
-                    }
-
-                    is ResultWrapper.Error -> {
-                        ViewStateResource.Error(it.data)
-                    }
-                }
+                val viewStateResource = handleDefaultViewStateResourceResult(it)
 
                 _pullRequestListState.postValue(viewStateResource)
             }
