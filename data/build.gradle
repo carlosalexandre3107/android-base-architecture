@@ -48,4 +48,8 @@ dependencies {
     //Room
     implementation dependencies.room
     kapt dependencies.roomCompiler
+
+    // Test Dependencies
+    testImplementation testDependecies.junit
+    testImplementation testDependecies.mockitoCore
 }

@@ -15,6 +15,9 @@ dependencies {
     // Test Dependencies
     testImplementation testDependecies.junit
     testImplementation testDependecies.mockitoCore
+
+//    testImplementation "io.mockk:mockk:1.9"
+//    testImplementation "io.mockk:mockk-android:1.9"
 }
 
 sourceCompatibility = "8"
